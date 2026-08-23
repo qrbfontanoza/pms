@@ -1,7 +1,0 @@
-/uploads/*
-!/uploads/licenses/
-!/uploads/licenses/.htaccess
-/assets/avatars/*
-!/assets/avatars/.gitkeep
-/assets/licenses/*
-!/assets/licenses/.htaccess
