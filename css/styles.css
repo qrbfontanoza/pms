@@ -1,0 +1,1222 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap');
+
+:root {
+  --font-size: 16px;
+  --background: #F8FAFC;
+  --primary: #0F2A4D;
+  /* --secondary darkened #2F6FED -> #2159C7 on 2026-08-22 (UI Implementation
+     Plan, Phase 12; BUGS.md item 41), approved. The old value measured
+     4.35:1 against --background — a WCAG AA failure for normal text, which
+     .section-eyebrow renders at 13.6px. The new value measures 6.05:1
+     against --background and 6.33:1 against white.
+     Darkening is safe in both of this token's roles, verified against every
+     consumer before the change: as TEXT (.section-eyebrow, .stats-bar
+     .stat-number, .testimonial-avatar, .dashboard-stat-icon) it sits only on
+     light surfaces, so a darker value strictly improves contrast; as a
+     white-text-bearing FILL (.step-badge, .avatar-circle) white-on-it rises
+     from 4.55:1 to 6.33:1, so that role improves too. There is no consumer
+     where this token is a light element on a dark surface, which is the only
+     case darkening could have hurt. */
+  --secondary: #2159C7;
+  --muted-foreground: #718096;
+  --accent: #63A8FF;
+  /* Focus-ring only: --accent (#63A8FF) measures ~2.3:1 against --background
+     (#F8FAFC), below WCAG 1.4.11's 3:1 minimum for UI-component contrast.
+     --accent-focus is a darker step of the same blue, used nowhere else. */
+  --accent-focus: #1A7FFF;
+  --border: rgba(15, 42, 77, 0.12);
+  --sidebar-bg: #ffffff;
+  /* Kept derived from --secondary: this is that brand blue at 10% alpha, so
+     it tracks the 2026-08-22 darkening above (was rgba(47,111,237,.1)). At
+     10% alpha the visual difference is negligible; the point is that the
+     token stays a tint of the brand colour rather than silently becoming a
+     tint of the *old* one. Hover background only — carries no text. */
+  --sidebar-hover: rgba(33, 89, 199, 0.1);
+
+  /* Motion — Duration */
+  --motion-duration-fast:    150ms;   /* micro: hover colour, focus ring */
+  --motion-duration-normal:  300ms;   /* standard: card lift, modal fade */
+  --motion-duration-slow:    500ms;   /* entrance / reveal */
+
+  /* Motion — Delay */
+  --motion-delay-none:    0ms;
+  --motion-delay-short:   80ms;       /* stagger between siblings */
+  --motion-delay-medium:  160ms;
+  --motion-delay-long:    300ms;      /* between hero heading and subhead */
+
+  /* Motion — Easing */
+  --motion-easing-standard:   cubic-bezier(0.2, 0, 0.2, 1);      /* default */
+  --motion-easing-entrance:   cubic-bezier(0.16, 1, 0.3, 1);     /* content entering */
+  --motion-easing-exit:       cubic-bezier(0.4, 0, 1, 1);        /* content leaving */
+  --motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);        /* attention-getting */
+
+  /* Motion — Distance (translate for entrance) */
+  --motion-distance-sm:   8px;
+  --motion-distance-md:   16px;
+  --motion-distance-lg:   24px;
+
+  /* Motion — Scale (subtle only — no scale > 1.05) */
+  --motion-scale-subtle:   1.02;
+  --motion-scale-standard: 1.05;
+
+  /* Motion — Stagger */
+  --motion-stagger:        80ms;
+}
+
+/* ========== Link colour override (UI Implementation Plan, Phase 12,
+   2026-08-22; BUGS.md item 41) — approved ==========
+
+   Bootstrap 5.3.2's default --bs-link-color (#0d6efd) measures 4.30:1 on a
+   white card and 4.50:1 on --background — at or below WCAG AA's 4.5:1 bar
+   for normal text, affecting every <a> and .btn-link site-wide (13 elements
+   on vehicles.php alone). Replaced with #0a58ca — which is not a new colour:
+   it is Bootstrap's OWN darker step in the same ramp, already shipped as its
+   default :hover value. Measured 6.15:1 on --background, 6.44:1 on white.
+   Hover moves one step further down the same ramp to #084298 (Bootstrap's
+   own $primary-text-emphasis), 8.95:1, so hover stays visibly darker than
+   rest rather than collapsing onto it.
+
+   TWO THINGS HERE ARE LOAD-BEARING, both established by testing rather than
+   assumption:
+
+   1. --bs-link-color-rgb is the property that actually works. Bootstrap
+      colours anchors with `rgba(var(--bs-link-color-rgb), var(--bs-link-
+      opacity, 1))`, NOT with var(--bs-link-color). Setting only the named
+      variable was verified live to change nothing at all; the -rgb variant
+      is what moves the pixel. The named variables are still set because
+      .btn-link maps --bs-btn-color/--bs-btn-hover-color to them directly.
+      All four must be declared together or the two link flavours diverge.
+
+   2. The :not([data-bs-theme="dark"]) scope is required, not decorative.
+      Bootstrap declares its dark link colours in a plain [data-bs-theme=dark]
+      block (specificity 0,1,0). This stylesheet loads AFTER Bootstrap, so a
+      bare :root here (also 0,1,0) would win on source order in BOTH themes
+      and force this dark navy blue onto the dark theme's near-black
+      background. :root:not(...) raises specificity to 0,2,0 and confines the
+      override to light mode, where dark mode's own links (#6ea8fe, already
+      measured clean) are left entirely untouched. */
+:root:not([data-bs-theme="dark"]) {
+  --bs-link-color: #0a58ca;
+  --bs-link-color-rgb: 10, 88, 202;
+  --bs-link-hover-color: #084298;
+  --bs-link-hover-color-rgb: 8, 66, 152;
+}
+
+/* ========== Dark mode token set (System Enhancements initiative, Step 8b)
+   ========== Scoped under Bootstrap 5.3's native [data-bs-theme="dark"]
+   attribute (Decision D3), set on <html> by js/theme.js. Desaturated tonal
+   variants of the light palette, not inversions — per
+   docs/SYSTEM_ENHANCEMENTS_ANALYSIS.md §1.5, inverting --primary
+   (#0F2A4D navy) would produce a pale cream, which is off-brand and wrong.
+   Contrast against the dark --background below, computed and verified:
+   --primary 8.66:1, --secondary 6.82:1, --accent 9.44:1, --accent-focus
+   6.98:1 (re-derived for the dark background specifically — the light
+   value is not transferable, per --accent-focus's own light-mode comment
+   above), --muted-foreground 8.05:1. All comfortably clear WCAG 2.1 AA's
+   4.5:1 (text) / 3:1 (UI components) minimums as standalone token values.
+
+   KNOWN, FLAGGED CONFLICT — not resolved here, by design: --primary is used
+   in this stylesheet both as `color` (text — needs to be light against a
+   dark background) and as `background-color` with white text on top (the
+   active navbar pill, .cta-banner-style fills — needs to stay dark enough
+   for white text to read). A single token cannot satisfy both roles at
+   once: white text on this dark-mode --primary measures only ~2.06:1
+   (FAILS WCAG AA). This is a foundation-only step (see the plan) — it does
+   not yet claim any page is contrast-correct in dark mode. Steps 9 and 10
+   must audit every --primary-as-fill consumer individually and give the
+   handful that need it a dedicated dark-mode override rather than relying
+   on this token alone. */
+[data-bs-theme="dark"] {
+  --background: #0F172A;
+  --primary: #8FB8E8;
+  --secondary: #6FA0F5;
+  --muted-foreground: #A3AFC2;
+  --accent: #8CC0FF;
+  --accent-focus: #4DA6FF;
+  --border: rgba(255, 255, 255, 0.14);
+  --sidebar-bg: #1A2436;
+  --sidebar-hover: rgba(143, 184, 232, 0.15);
+}
+
+/* ========== Dark mode corrections (System Enhancements initiative, Step 9
+   — Client Sweep) ========== Found by an automated contrast audit run live
+   against every client page in dark mode, not assumed from the token block
+   alone. Two categories:
+
+   (1) The --primary/--secondary dual-role conflict the Step 8 token block
+   already flagged in its own comment turned out to have five real
+   consumers on the client side, all confirmed live: the active navbar pill,
+   .cta-banner, the site footer, .step-badge, and .avatar-circle (the
+   initials fallback rendered by js/app.js's getAvatarHtml()). Each uses
+   --primary or --secondary as a solid, always-white-text fill — a role the
+   dark-mode text-oriented values of those tokens cannot serve (white on the
+   dark --primary measured ~2.06:1, confirmed failing). Fixed by re-scoping
+   both custom properties back to their light-mode brand values *only*
+   within these five selectors — nothing else references --primary/
+   --secondary as a fill in a way that would be disturbed by this, verified
+   by inspecting each consumer's actual children before applying it.
+
+   (2) Three separate pre-existing hardcoded-hex rules that never had a dark
+   counterpart at all: .navbar .nav-link's base color (#334155), .vehicle-
+   pricebar small's color (#6b7280), and the global .modal-header rule
+   (#f8f9fa background + #dee2e6 border) — the last one is the highest-
+   impact single fix in this list, since it's unscoped and was forcing every
+   modal's header on every page (client and admin) to stay light regardless
+   of theme. Also: Bootstrap 5.3's dark mode does not redefine its own
+   --bs-primary/--bs-secondary brand-colour variables (confirmed live) —
+   only neutrals — so .btn-outline-primary/.btn-outline-secondary kept their
+   light-mode text colour and under-performed against this project's custom
+   (and comparatively darker) --background. Overridden via Bootstrap's own
+   per-component --bs-btn-* custom properties, the idiomatic mechanism for
+   exactly this kind of customisation, rather than fighting the cascade. */
+[data-bs-theme="dark"] .cta-banner,
+[data-bs-theme="dark"] footer.text-white,
+[data-bs-theme="dark"] .step-badge,
+[data-bs-theme="dark"] .avatar-circle,
+[data-bs-theme="dark"] .navbar .nav-link.active,
+[data-bs-theme="dark"] .navbar .nav-link[aria-current="page"] {
+  --primary: #0F2A4D;
+  /* Tracks the 2026-08-22 --secondary darkening (was #2F6FED). These are
+     deliberate literals, not var() references — the whole point of this
+     block is to pin the LIGHT brand fill value inside dark mode, so it must
+     restate it. Updated in step with :root so the brand fill is one colour
+     in both themes rather than silently forking into two. White text on this
+     fill improves from 4.55:1 to 6.33:1 as a side effect. */
+  --secondary: #2159C7;
+}
+
+[data-bs-theme="dark"] .navbar .nav-link {
+  color: var(--muted-foreground);
+}
+
+[data-bs-theme="dark"] .vehicle-pricebar small {
+  color: var(--muted-foreground);
+}
+
+/* UI Implementation Plan, Phase 12 (Final UI Review) — new finding.
+   .vehicle-specs (the seats/fuel/transmission row on every vehicle card,
+   index.php + vehicles.php) and its icons are hardcoded light-mode greys
+   (#4b5563 / #6b7280) with no dark counterpart — the exact same class of
+   gap Steps 9/10 found and fixed for .navbar .nav-link and .vehicle-
+   pricebar small directly above, just missed on this one selector pair.
+   Measured live in dark mode: #4b5563 on the card's #212529 surface is
+   2.04:1, a clear WCAG AA failure (light mode is fine at 7.57:1, which is
+   why it was never caught by a light-only check). Fixed with the same
+   token and the same technique as its two neighbours above — no new
+   colour introduced. */
+[data-bs-theme="dark"] .vehicle-specs,
+[data-bs-theme="dark"] .vehicle-specs i {
+  color: var(--muted-foreground);
+}
+
+[data-bs-theme="dark"] .modal-header {
+  background-color: transparent;
+  border-bottom-color: var(--border);
+}
+
+[data-bs-theme="dark"] .btn-outline-primary {
+  --bs-btn-color: var(--primary);
+  --bs-btn-border-color: var(--primary);
+  --bs-btn-hover-color: var(--background);
+  --bs-btn-hover-bg: var(--primary);
+  --bs-btn-hover-border-color: var(--primary);
+  --bs-btn-active-color: var(--background);
+  --bs-btn-active-bg: var(--primary);
+  --bs-btn-active-border-color: var(--primary);
+}
+
+[data-bs-theme="dark"] .btn-outline-secondary {
+  --bs-btn-color: var(--muted-foreground);
+  --bs-btn-border-color: var(--muted-foreground);
+}
+
+/* transactions.php's $time_badge_class/$booking_badge_class (bg-info/
+   bg-warning + text-body) already carry their own correct, documented
+   reasoning at that call site: those badge backgrounds are always bright/
+   light regardless of theme, so their text must always be dark to read —
+   text-body was the right non-deprecated Bootstrap utility for "dark text"
+   when this project was light-mode-only. Now that text-body is
+   theme-relative (light in dark mode, by design — that's what makes it
+   correct everywhere else), it inverts exactly the pairing these two
+   badges need. Pinned back to the same #212529 that call site's own
+   comment already measured at ~7.9:1 against bg-info. */
+[data-bs-theme="dark"] .badge.bg-info.text-body,
+[data-bs-theme="dark"] .badge.bg-warning.text-body {
+  color: #212529 !important;
+}
+
+/* Bootstrap 5.3 does not redefine plain .text-success/.text-danger or the
+   .btn-outline-success/.btn-outline-danger border+text colour for dark
+   mode — only its own "-emphasis" custom properties are dark-adjusted
+   (confirmed live: --bs-success-text-emphasis and --bs-danger-text-
+   emphasis both already resolve to dark-safe values under
+   [data-bs-theme="dark"], measured at 7.64:1 and 7.06:1 against this
+   project's --background). Reusing Bootstrap's own dark-mode variables
+   rather than inventing new colours. */
+[data-bs-theme="dark"] .text-success {
+  color: var(--bs-success-text-emphasis) !important;
+}
+
+[data-bs-theme="dark"] .text-danger {
+  color: var(--bs-danger-text-emphasis) !important;
+}
+
+[data-bs-theme="dark"] .btn-outline-danger {
+  --bs-btn-color: var(--bs-danger-text-emphasis);
+  --bs-btn-border-color: var(--bs-danger-text-emphasis);
+}
+
+[data-bs-theme="dark"] .btn-outline-success {
+  --bs-btn-color: var(--bs-success-text-emphasis);
+  --bs-btn-border-color: var(--bs-success-text-emphasis);
+}
+
+/* admin-dashboard.php's Business Overview panel (Phase 8 Step 7) uses plain
+   Bootstrap .progress-bar contextual fills (bg-primary/success/danger/
+   warning/secondary) against a dark .progress track — same root cause as
+   the .btn-outline-* and .text-success findings above: Bootstrap doesn't
+   dark-adjust its own brand-colour fills, only neutrals. Measured live:
+   bg-primary's plain blue against the dark track's #343a40 fell to 2.56:1,
+   below the 3:1 UI-component minimum. Reusing the same "-text-emphasis"
+   custom properties already confirmed dark-safe for the .text-success/
+   .text-danger fix, now as background fills — all five measured 4.55:1 or
+   better against the dark track. */
+[data-bs-theme="dark"] .progress-bar.bg-primary { background-color: var(--bs-primary-text-emphasis) !important; }
+[data-bs-theme="dark"] .progress-bar.bg-success { background-color: var(--bs-success-text-emphasis) !important; }
+[data-bs-theme="dark"] .progress-bar.bg-danger { background-color: var(--bs-danger-text-emphasis) !important; }
+[data-bs-theme="dark"] .progress-bar.bg-warning { background-color: var(--bs-warning-text-emphasis) !important; }
+[data-bs-theme="dark"] .progress-bar.bg-secondary { background-color: var(--bs-secondary-text-emphasis) !important; }
+
+html {
+  font-size: var(--font-size);
+}
+
+body {
+  font-family: 'Inter', 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--background);
+}
+
+.font-poppins {
+  font-family: 'Poppins', sans-serif;
+}
+
+.font-inter {
+  font-family: 'Inter', sans-serif;
+}
+
+/* ========== Hero Section ========== */
+.hero-immersive {
+  margin-top: 56px;
+  min-height: min(calc(100vh - 56px), 700px);
+}
+
+.hero-fallback-img {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-immersive video {
+    display: none;
+  }
+
+  .hero-immersive .hero-fallback-img {
+    display: block;
+  }
+}
+
+/* ========== Motion Design Foundation (global reduced-motion gate) ========== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Essential feedback exception: spinners must keep rotating */
+  .spinner-border,
+  .spinner-grow {
+    animation-duration: 0.75s !important;
+  }
+}
+
+/* ========== Fixed navbar clearance (non-hero content pages) ========== */
+.navbar-offset {
+  margin-top: 80px;
+}
+
+/* ========== Vehicle Search Widget (overlaps hero/content boundary) ========== */
+.search-widget-wrap {
+  position: relative;
+  z-index: 3;
+  margin-top: -90px;
+}
+
+.search-widget-card {
+  max-width: 1000px;
+  /* Elevation relocated from .glassmorph (removed, System Enhancements
+     initiative Step 5) — this card sits over the hero video and needs to
+     read clearly above it now that it's an opaque bg-body surface rather
+     than a translucent one. */
+  border-radius: 18px;
+  box-shadow: 0 6px 32px #0002;
+}
+
+@media (max-width: 991.98px) {
+  .search-widget-wrap {
+    margin-top: -60px;
+  }
+}
+
+
+/* Custom mobile adjustments */
+@media (max-width: 991.98px) {
+  /* Add to your css/styles.css */
+  @media (max-width: 991.98px) {
+    .navbar-brand img {
+      height: 32px;
+    }
+
+    .navbar-brand {
+      font-size: 1.1rem;
+    }
+
+    .navbar-nav .nav-link {
+      padding-left: 1rem;
+      padding-right: 1rem;
+      text-align: center;
+    }
+
+    .navbar {
+      padding-top: 0.5rem;
+      padding-bottom: 0.5rem;
+    }
+
+    /* Reduce padding/margins for main content. Matches Bootstrap's default
+       0.75rem container gutter (var(--bs-gutter-x) * 0.5) rather than a smaller
+       custom value — .row's un-touched -0.75rem margin only cancels out exactly
+       against a padding of the same size; a smaller value here caused a 4-5px
+       horizontal overflow at 320px (BUGS.md item 27). */
+    main.container,
+    .container-lg {
+      padding-left: 0.75rem !important;
+      padding-right: 0.75rem !important;
+    }
+  }
+
+  /* Extra small screens */
+  @media (max-width: 575.98px) {
+    .navbar-brand {
+      font-size: 1rem;
+    }
+
+    .navbar-brand img {
+      height: 24px;
+    }
+
+    .navbar-nav .nav-link {
+      font-size: 0.98rem;
+    }
+  }
+
+  /* Responsive navbar: horizontal scroll on mobile */
+  @media (max-width: 991.98px) {
+
+    .navbar-nav,
+    .d-flex.gap-2 {
+      flex-wrap: nowrap !important;
+      overflow-x: auto !important;
+      white-space: nowrap !important;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      /* Firefox */
+    }
+
+    .navbar-nav::-webkit-scrollbar,
+    .d-flex.gap-2::-webkit-scrollbar {
+      display: none;
+      /* Chrome/Safari */
+    }
+
+    .nav-link {
+      font-size: 1rem;
+      padding-left: 1rem;
+      padding-right: 1rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .rounded-pill.p-2.shadow-sm {
+      padding: 0.5rem 0.25rem !important;
+    }
+  }
+}
+
+
+
+/* Navbar dropdown */
+.dropdown-menu {
+  min-width: 120px;
+}
+
+.dropdown-item.text-danger:hover {
+  background: #ffeaea;
+}
+
+/* Navbar active/highlight styles */
+.navbar .nav-link {
+  color: #334155;
+  /* slate-700 */
+  transition: color .2s, background-color .2s;
+}
+
+.navbar .nav-link:hover {
+  color: var(--primary);
+}
+
+.navbar .nav-link.active,
+.navbar .nav-link[aria-current="page"] {
+  color: #fff !important;
+  background-color: var(--primary);
+  border-radius: 9999px;
+  /* pill */
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+/* Admin Sidebar */
+#adminSidebar {
+  --bs-offcanvas-width: 250px;
+  background: var(--sidebar-bg);
+}
+
+#adminSidebar .nav-link {
+  color: #333;
+  border-radius: 8px;
+  padding: 10px 16px;
+  transition: background 0.2s;
+}
+
+#adminSidebar .nav-link.active,
+#adminSidebar .nav-link:hover {
+  background: var(--sidebar-hover);
+}
+
+/* Admin main content pane (the Step 1 shell's #adminLayout > .flex-grow-1):
+   without min-width: 0 this flex item refuses to shrink below its widest
+   descendant (e.g. the DataTables table), causing page-level horizontal
+   scroll at narrow viewports even though .table-responsive already
+   scrolls internally. Scoped to #adminLayout so the generic .flex-grow-1
+   utility is untouched everywhere else, including customer pages. */
+#adminLayout > .flex-grow-1 {
+  min-width: 0;
+}
+
+/* Admin Topbar (Step 2): Bootstrap ships no min-width utility, and this
+   flex item is itself a flex container, so overflow-hidden alone does not
+   zero its automatic min-width — without this the h1's text-truncate
+   never engages and the topbar overflows at narrow viewports. */
+.admin-topbar-title-group {
+  min-width: 0;
+}
+
+/* Admin Topbar (Step 2): btn-sm buttons (the toggle, and the per-page
+   action-slot button) fall short of the 44px touch target at mobile
+   widths. Bootstrap has no utility for a minimum tap-target height. */
+@media (max-width: 575.98px) {
+  .admin-topbar .btn {
+    min-height: 44px;
+  }
+}
+
+/* Admin confirmation modal (Step 6): Bootstrap's default .btn has no
+   minimum tap-target height, and this modal's Cancel/destructive-action
+   buttons must be reachable at 375px per the Admin Forms Standardization
+   plan's confirmAction() accessibility requirement. */
+@media (max-width: 575.98px) {
+  #adminConfirmModal .btn {
+    min-height: 44px;
+  }
+}
+
+/* Admin Dashboard phase, Step 9: .btn-sm touch-target deferral, flagged and
+   deliberately not fixed per-table in Steps 4-6 so it could be resolved once,
+   consistently, here. Measured live (Chrome DevTools, real rendered admin
+   pages) before this fix: row-action buttons (Edit/Delete on
+   admin_users.php/admin_vehicles.php/admin_vouchers.php) were 27-29px tall,
+   icon-only ones as narrow as 28px wide — both well under the 44x44px
+   minimum. Scoped to #adminLayout (not a bare .btn-sm override) because
+   .btn-sm is not used anywhere on the six customer-facing pages (confirmed by
+   grep before this change), so a global change was unnecessary risk; the
+   scoped selector documents that intent instead of relying on the accident.
+   flex + centering keeps icon-only buttons visually centered once the box
+   grows past their tiny icon-plus-padding content. */
+#adminLayout .btn-sm {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Admin Dashboard phase, Step 9: DataTables' Bootstrap 5 pagination links
+   (#…_paginate .page-link) measured 37px tall live — under the same 44px
+   minimum, for the same reason as .btn-sm above (Bootstrap's default
+   .page-link padding assumes a mouse, not a touch target). */
+#adminLayout .page-link {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* UI Implementation Plan, Phase 9 (Responsive Review): the client-side
+   equivalent of the .btn-sm gap above — plain .btn (not .btn-sm, which the
+   customer pages don't use) is the client side's own default-sized button
+   convention, and Bootstrap's un-scoped default padding measures ~37px tall
+   live on every "View Car Details"/"Reserve Now"/pagination control checked
+   (vehicles.php, index.php quick-view modals). Same fix, same reasoning as
+   #adminLayout above, generalized to the un-scoped .btn class since plain
+   .btn genuinely is the sitewide client convention (unlike admin's .btn-sm).
+   Excludes .btn-sm (admin's own rule already covers it) and .btn-close
+   (which now has its own sizing rule immediately below — see item 28). */
+.btn:not(.btn-sm):not(.btn-close),
+.page-link {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* UI Implementation Plan, Phase 12 (Final UI Review) — BUGS.md item 28.
+   Bootstrap's default .btn-close is 32x32px (1em icon + .25em padding),
+   below the 44x44px minimum items 25 and 34 established as this project's
+   standard for every other control. Item 28 deliberately left it alone at
+   the time because fixing it on one modal only would have produced two
+   inconsistent close-button sizes across the site, and a project-wide
+   change was larger than that step's mandate. This is the project-wide
+   pass, so it is applied uniformly: every .btn-close on every modal and
+   dismissible alert, client and admin alike, now shares one 44x44px size.
+   Only the box grows — background-position: center keeps Bootstrap's own
+   icon at its original 1em size, visually centred, so nothing about the
+   glyph, colour, or dismiss behaviour changes. .alert-dismissible already
+   reserves 3rem of padding-right for this button, so 44px still clears the
+   alert text.
+
+   box-sizing must be overridden here: Bootstrap ships .btn-close as
+   `box-sizing: content-box` with `padding: .25em`, so setting width/height
+   alone yields a 60x60px box (44 + 8 + 8), not 44 — measured live before
+   this line was added, and it inflated every modal header by ~20px in the
+   process. border-box + padding:0 makes the declared 44px the real outer
+   size, and background-position:center keeps Bootstrap's own .75em icon
+   centred in it.
+
+   flex-shrink is required too, not belt-and-braces: admin_vehicles.php /
+   admin_vouchers.php / admin_users.php put their in-modal validation
+   alert's .btn-close inside a `d-flex justify-content-between` row next to
+   the message text. As a flex item with the default flex-shrink:1, the
+   button was compressed to 22px wide (measured live at 320px) even with an
+   explicit width:44px — i.e. the width declaration alone did not deliver
+   44px in the one context where the button is a flex child. Pinning
+   flex-shrink:0 makes the text span absorb the squeeze instead, which is
+   the correct priority: the text wraps, the touch target does not shrink. */
+.btn-close {
+  box-sizing: border-box;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  flex-shrink: 0;
+  background-position: center;
+}
+
+/* Admin Dashboard phase, Step 9: DataTables' generated Search box overflowed
+   its container at 320px on view-all-data.php, confirmed live — the
+   .dataTables_filter <label> wraps its text and a fixed-width <input> inline
+   with no wrap allowed, and the custom "Search bookings:" label (longer than
+   the "Search:" default used elsewhere) pushed the combined width past the
+   viewport. Below 576px the label is allowed to wrap and the input is given
+   a fluid width instead of DataTables' fixed one, so this holds regardless
+   of how long a future custom search label string is. */
+@media (max-width: 575.98px) {
+  #adminLayout .dataTables_filter {
+    width: 100%;
+    text-align: left;
+  }
+
+  #adminLayout .dataTables_filter label {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    width: 100%;
+  }
+
+  #adminLayout .dataTables_filter input {
+    width: 100%;
+    max-width: none;
+    margin-left: 0;
+    margin-top: 0.35rem;
+  }
+}
+
+/* Category bar layout */
+#categoryBar {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+}
+
+/* Category buttons */
+#categoryBar .btn {
+  flex: 1 1 auto;
+  font-size: 0.9rem;
+  padding: 0.35rem 0.6rem;
+  white-space: nowrap;
+  min-width: 70px;
+  max-width: 120px;
+}
+
+/* Smaller sizes for mobile screens */
+@media (max-width: 768px) {
+  #categoryBar {
+    gap: 0.3rem;
+  }
+
+  #categoryBar .btn {
+    font-size: 0.8rem;
+    padding: 0.3rem 0.5rem;
+    min-width: 60px;
+  }
+}
+
+@media (max-width: 480px) {
+  #categoryBar .btn {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.45rem;
+    min-width: 55px;
+  }
+}
+
+
+/* Mobile Menu */
+@media (max-width: 991.98px) {
+    .navbar-collapse {
+        padding-bottom: 1rem;
+    }
+
+    .navbar-nav .nav-item {
+        padding: 0.5rem 0;
+    }
+}
+
+/* ========== Signup privacy-consent checkbox (System Enhancements initiative,
+   Step 7) ========== Bootstrap's default .form-check-input renders at ~1em
+   (~16px), well under the 44x44px touch-target minimum. Enlarged directly;
+   the adjacent label text is also clickable (native <label for> behavior)
+   and spans multiple lines, giving a generous effective tap area beyond the
+   glyph itself. */
+#signupPrivacyConsent {
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-top: 0.1rem;
+}
+
+/* ========== Feature Card Animation ========== */
+.feature-card {
+  transition: transform .2s, box-shadow .26s;
+}
+
+.feature-card:hover {
+  box-shadow: 0 7px 48px #63A8FF44;
+}
+
+/* Motion Design Phase 3: standardise hover-lift to match .vehicle-card/.testimonial-card (no scale).
+   Pre-Phase-4 remediation: the two prior transform declarations here (translateY(-7px) scale(1.05),
+   then this file's own translateY(-6px) override) always resolved to translateY(-6px) only — see
+   CHANGELOG Phase 3 "feature-card hover standardised" note. Consolidated into one declaration while
+   adding the reduced-motion gate below; visible result for motion-allowed users is unchanged. */
+@media (prefers-reduced-motion: no-preference) {
+  .feature-card:hover {
+    transform: translateY(-6px);
+  }
+}
+
+/* ========== How It Works: eyebrow + step badge ========== */
+.section-eyebrow {
+  color: var(--secondary);
+  letter-spacing: 2px;
+  font-size: 0.85rem;
+}
+
+.step-badge {
+  width: 36px;
+  height: 36px;
+  background: var(--secondary);
+  color: #fff;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ========== Animate.css is used for entrance/scroll fades — you can use 'animate__animated animate__...' classes on sections ========== */
+
+::-webkit-scrollbar {
+  width: 0;
+}
+
+/* ===================== Vehicles Page Card Enhancements ===================== */
+.vehicle-card {
+  transition: transform .2s ease, box-shadow .25s ease;
+  border: 1px solid rgba(15, 42, 77, .08);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.vehicle-card:hover {
+  box-shadow: 0 14px 40px rgba(15, 42, 77, .18);
+}
+
+/* Pre-Phase-4 remediation: hover-lift transform gated behind reduced-motion; shadow above stays ungated. */
+@media (prefers-reduced-motion: no-preference) {
+  .vehicle-card:hover {
+    transform: translateY(-6px);
+  }
+}
+
+.vehicle-img-wrap {
+  position: relative;
+  overflow: hidden;
+}
+
+.vehicle-img-wrap img {
+  transition: transform .35s ease;
+  display: block;
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+/* Not gated by reduced-motion: this is an image-scale rule, not a named card
+   hover-lift, and its transform is hardcoded (not motion-token-driven) — out
+   of scope for the Pre-Phase-4 remediation, which named .feature-card,
+   .vehicle-card, and .testimonial-card specifically. Flagged, not resolved. */
+.vehicle-card:hover .vehicle-img-wrap img {
+  transform: scale(1.05);
+}
+
+.vehicle-img-wrap::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, .28), rgba(0, 0, 0, 0) 55%);
+  pointer-events: none;
+}
+
+.filter-sidebar {
+  /* Sticky on desktop so it scrolls with the page */
+}
+
+@media (min-width: 992px) {
+  .filter-sidebar {
+    position: sticky;
+    top: 80px; /* below fixed navbar */
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+  }
+}
+
+.filter-group {
+  /* Spacing between filter sections */
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.filter-group:last-child {
+  border-bottom: none;
+}
+
+.filter-group-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--primary);
+  margin-bottom: 0.75rem;
+}
+
+.vehicle-specs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px 10px;
+  color: #4b5563;
+  font-size: .92rem;
+}
+
+.vehicle-specs i {
+  color: #6b7280;
+  width: 18px;
+}
+
+.vehicle-pricebar {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: .5rem;
+  padding-top: .5rem;
+  border-top: 1px dashed rgba(0, 0, 0, .1);
+}
+
+.vehicle-pricebar .price {
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+/* Vehicle Details modal image — larger than the card thumbnail (200px) */
+.details-modal-img {
+  height: 260px;
+  object-fit: cover;
+}
+
+/* Booking preview summary — small vehicle-context thumbnail, same cover-fit
+   convention as .vehicle-img-wrap img / .details-modal-img, scaled down for
+   an inline summary row rather than a card/modal-body image */
+.booking-preview-thumb {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+}
+
+/* UI Implementation Plan, Phase 12 (Final UI Review) — BUGS.md item 26.
+
+   This section previously held (a) ~30 lines of `#receiptModal .modal-*`
+   styling and (b) an @media print block that hid the entire page
+   (`body * { visibility: hidden }`) and un-hid only `#receiptModal`.
+   `#receiptModal` was built at runtime by js/printer.js, which Phase 11
+   deleted as confirmed dead — so from that point the un-hide condition
+   could never be satisfied by any element on any page, while the hide
+   still applied to every page. Net effect: printing ANY page in the app
+   produced a blank sheet, not just receipt.php (item 26's original,
+   narrower symptom).
+
+   Fix: the `#receiptModal` rules are deleted (zero such elements exist
+   anywhere in the codebase — verified by repo-wide grep across all .php
+   and .js files), and the print block is re-scoped to the one surface
+   whose actual purpose is to be printed: receipt.php's `.receipt-card`,
+   gated behind `body.receipt-page` so the page-wide hide can never leak
+   onto a page that has no printable card. Every other page now prints
+   its normal content instead of nothing. `.btn-print` was dropped from
+   the hidden-controls list too — no element carries that class anywhere
+   (it belonged to js/printer.js and went with it). */
+@media print {
+  body.receipt-page * {
+    visibility: hidden;
+  }
+  body.receipt-page .receipt-card,
+  body.receipt-page .receipt-card * {
+    visibility: visible;
+  }
+  body.receipt-page .receipt-card {
+    position: absolute;
+    left: 0;
+    top: 0;
+    margin: 0;
+    max-width: 100%;
+    width: 100%;
+    border: 0;
+    box-shadow: none;
+  }
+  /* The navbar/footer are already removed by the page-wide hide above;
+     these two navigation links live *inside* .receipt-card and would
+     otherwise be un-hidden by the rule above, so they need their own
+     opt-out — they are meaningless on paper. */
+  body.receipt-page .receipt-card .card-footer {
+    display: none !important;
+  }
+}
+
+.vehicle-pricebar small {
+  color: #6b7280;
+}
+
+/* User Management Table */
+.table th {
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6c757d;
+    background-color: #f8f9fa;
+    border-bottom-width: 1px;
+}
+
+/* Dark mode correction (System Enhancements initiative, Step 10 — Admin
+   Sweep). The rule above is global and unscoped — it applies to every
+   <table class="table"> across all seven admin pages, not just "User
+   Management" despite its comment — and had no dark counterpart at all,
+   confirmed live: every table header on admin-dashboard.php stayed a
+   hardcoded light #f8f9fa/#6c757d regardless of theme, the same class of
+   gap Step 9 found and fixed for .modal-header. --bs-table-bg was already
+   correctly dark (#212529) here; this rule's own explicit background-color
+   was simply overriding it with a higher-specificity light literal. */
+[data-bs-theme="dark"] .table th {
+  color: var(--muted-foreground);
+  background-color: transparent;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+/* Action buttons */
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+/* Status badges */
+.badge {
+    font-weight: 500;
+    padding: 0.35em 0.65em;
+}
+
+/* Modal styling */
+.modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* Statistics / Trust Bar (homepage) */
+.stats-bar {
+  background-color: rgba(15, 42, 77, 0.05);
+}
+
+.stats-bar .stat-icon {
+  color: var(--primary);
+  font-size: 1.75rem;
+  display: block;
+}
+
+.stats-bar .stat-number {
+  color: var(--secondary);
+}
+
+/* Testimonials (homepage) */
+.testimonial-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.testimonial-card:hover {
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Pre-Phase-4 remediation: hover-lift transform gated behind reduced-motion; shadow above stays ungated. */
+@media (prefers-reduced-motion: no-preference) {
+  .testimonial-card:hover {
+    transform: translateY(-4px);
+  }
+}
+
+.testimonial-quote-icon {
+  color: var(--accent);
+  font-size: 1.25rem;
+  display: block;
+}
+
+.testimonial-avatar {
+  color: var(--secondary);
+  font-size: 3rem;
+  display: block;
+}
+
+/* Profile picture initials fallback (Customer Dashboard Step 4.1) — navbar,
+   profile section, and admin_users.php all render this when
+   profile_picture_path is unset, so a customer with no photo never shows a
+   broken-image icon. Size/font-size are set per instance via inline style
+   (matches the existing inline-sizing convention used for the navbar logo
+   in includes/client_navbar.php); only color comes from here. */
+.avatar-circle {
+  background-color: var(--secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* Team member cards (About Us). data-reveal is deliberately kept off this
+   element (see about.php comment) — it lives on the .col wrapper instead so
+   this element's own hover transition never gets clobbered by [data-reveal]'s
+   transition shorthand, the collision confirmed on .feature-card/.testimonial-card. */
+.team-member-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.team-member-card:hover {
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .team-member-card:hover {
+    transform: translateY(-4px);
+  }
+}
+
+/* Admin dashboard metric cards (Admin Dashboard phase, Step 3). data-reveal is
+   kept off this element and placed on its .col wrapper instead — same reason
+   as .team-member-card above: avoids the hover-transition clobber with
+   [data-reveal]'s transition shorthand. */
+.metric-card {
+  background: var(--sidebar-bg);
+  border-radius: 0.75rem;
+  transition: transform var(--motion-duration-normal) var(--motion-easing-entrance),
+              box-shadow var(--motion-duration-normal) var(--motion-easing-entrance);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .metric-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
+  }
+}
+
+/* Business Overview panel (Admin Dashboard phase, Step 7). Bootstrap ships
+   .progress-bar with an unconditional `transition: width .6s ease`, which
+   would animate the bar on every render regardless of the user's motion
+   preference. Disabled by default and re-enabled only when the user has not
+   requested reduced motion, matching the pattern used for hover-lift above. */
+.business-overview .progress-bar {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .business-overview .progress-bar {
+    transition: width var(--motion-duration-slow) var(--motion-easing-entrance);
+  }
+}
+
+/* Flattened from a three-stop gradient + 35%-black scrim to a single solid
+   token (System Enhancements initiative, Step 5, Decision D6 Option B) — the
+   scrim existed only because white text over the gradient's --accent end
+   measured 2.45:1 (WCAG AA fail); a flat --primary background measures
+   15.9:1 with no scrim needed. The section's position-relative/overflow-hidden
+   and the inner .container's position-relative/z-2 (index.php, about.php)
+   existed only to stack content above the now-removed ::before and were
+   removed with it. */
+.cta-banner {
+  background: var(--primary);
+}
+
+/* Responsive table */
+@media (max-width: 768px) {
+    .table-responsive {
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+    }
+}
+
+/* Dark mode correction (System Enhancements initiative, Step 10 — Admin
+   Sweep). The hardcoded #dee2e6 border above still passes contrast in dark
+   mode (11.85:1 against the dark page background), but it's a stray
+   hardcoded colour outside this project's token system. Reusing the same
+   var(--border) already used for the dark modal-header border (Step 9). */
+[data-bs-theme="dark"] .table-responsive {
+    border-color: var(--border);
+}
+
+/* ========== Motion Design Foundation: focus-visible ========== */
+:focus-visible {
+  /* !important needed: Bootstrap 5.3 sets outline: 0 on its own
+     .btn:focus-visible / .form-control:focus-visible / etc. rules,
+     which outrank a bare :focus-visible selector on specificity alone. */
+  outline: 3px solid var(--accent-focus) !important;
+  outline-offset: 2px !important;
+  transition: outline-offset var(--motion-duration-fast) var(--motion-easing-standard);
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ========== Motion Design Foundation: scroll-reveal base (unused until a later phase adds [data-reveal] markup) ========== */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(var(--motion-distance-md));
+  transition: opacity var(--motion-duration-slow) var(--motion-easing-entrance),
+              transform var(--motion-duration-slow) var(--motion-easing-entrance);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+[data-reveal].is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+[data-reveal-stagger] {
+  /* Marker attribute; per-child --reveal-delay is set by js/motion.js */
+}
+
+/* ========== Motion Design: image fade-on-load (wired up in Phase 5 — vehicles.php .btn-view-details handler) ========== */
+.js-fade-on-load {
+  opacity: 0;
+  transition: opacity var(--motion-duration-normal) var(--motion-easing-entrance);
+}
+
+.js-fade-on-load.loaded {
+  opacity: 1;
+}
+
+/* ========== Motion Design: booking preview reveal (wired up in Phase 5 — js/app.js's window.refreshBookingPreview() success branch, since the System Enhancements initiative's Step 2 removed the standalone #btnPreview button and folded its logic into that function) ==========
+   Deliberately NOT [data-reveal]: that selector is auto-observed by js/motion.js's
+   initReveal() IntersectionObserver on page load. #bookingPreview lives inside
+   #bookingModal, which is display:none until opened — as soon as the modal is
+   shown the observer would see it intersect the viewport and add .is-visible
+   itself, firing the reveal on modal-open rather than gated on a successful
+   preview response. A distinct class sidesteps that global observer;
+   .is-visible is still added manually in JS after content is populated.
+   #amountPaidSection stopped using this class in Step 2 — it is now always
+   present in the DOM rather than conditionally revealed, so it no longer
+   needs an entrance animation. */
+.js-booking-reveal {
+  opacity: 0;
+  transform: translateY(var(--motion-distance-sm));
+  transition: opacity var(--motion-duration-normal) var(--motion-easing-entrance),
+              transform var(--motion-duration-normal) var(--motion-easing-entrance);
+}
+
+.js-booking-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ========== Motion Design: button loading state (wired up in Phase 2 — js/app.js, js/voucher-manager.js, transactions.php) ========== */
+.is-loading {
+  cursor: wait;
+  pointer-events: none;
+}
+
+/* ========== Motion Design Phase 4: pagination tap responsiveness ========== */
+.page-link {
+  touch-action: manipulation;
+}
+
+/* ========== Customer Dashboard Phase 7 Step 2: enhanced summary cards (transactions.php) ========== */
+.dashboard-stat-card {
+  border: 1px solid var(--border);
+  min-width: 0;
+}
+
+.dashboard-stat-card .dashboard-stat-icon {
+  color: var(--secondary);
+  font-size: 1.5rem;
+}
+
+.dashboard-stat-card .dashboard-stat-value {
+  color: var(--primary);
+  overflow-wrap: break-word;
+}

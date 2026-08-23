@@ -1,0 +1,2 @@
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS profile_picture_path VARCHAR(255) DEFAULT NULL;
